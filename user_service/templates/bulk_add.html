@@ -1,0 +1,9 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Bulk add users</h1>
+{% if message %}<p>{{ message }}</p>{% endif %}
+<form action="/users/bulk" method="post" enctype="multipart/form-data">
+    CSV file: <input type="file" name="file" accept=".csv" required>
+    <input type="submit">
+</form>
+{% endblock %}
