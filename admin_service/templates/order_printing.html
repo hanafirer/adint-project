@@ -1,0 +1,9 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Print exams</h1>
+{% if message %}<p>{{ message }}</p>{% endif %}
+<form action="/exams/print" method="post" enctype="multipart/form-data">
+    Click the button below if you want to print the exams:
+    <input type="submit">
+</form>
+{% endblock %}

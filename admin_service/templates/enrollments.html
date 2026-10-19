@@ -1,0 +1,29 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Enrollments</h1>
+
+<form method="get" action="/enrollments">
+    Student ID: <input type="number" name="student_id" value="{{ student_id if student_id is not none else ''}}">
+    <input type="submit" value="Show exams for this student">
+</form>
+
+<form method="get" action="/enrollments">
+    Exam:
+    <select name="exam_id">
+        <option value="">-- all --</option>
+        {% for e in exams %}
+        <option value="{{ e.id }}" {% if e.id == exam_id %}selected{% endif %}>
+            {{ e.id }} - {{ e.course }} ({{ e.date }})
+        </option>
+    {% endfor %}
+    </select>
+    <input type="submit" value="Show student enrolled in this exam">
+</form>
+
+<table border="1">
+  <tr><th>Exam ID</th><th>Course</th><th>Date/time</th><th>Student ID</th></tr>
+  {% for r in rows %}
+  <tr><td>{{ r.exam_id }}</td><td>{{ r.course }}</td><td>{{ r.date }}</td><td>{{ r.student_id }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

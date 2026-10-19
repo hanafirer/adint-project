@@ -1,0 +1,10 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Exams:</h1>
+<table border="1">
+    <tr><th>ID</th><th>DateTime</th><th>Course</th></tr>
+    {% for e in exams %}
+    <tr><td>{{ e.id }}</td><td>{{ e.datetime }}</td><td>{{ e.course }}</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}
