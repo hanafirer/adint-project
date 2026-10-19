@@ -1,4 +1,4 @@
-import csv, io
+import csv, io, os
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import create_engine, Column, Integer, String
@@ -18,8 +18,8 @@ class User(Base):
     def __repr__(self):
         return f"User({self.id} {self.name} {self.role})"
 
-
-engine = create_engine('sqlite:///users.sqlite')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+engine = create_engine(f"sqlite:///{os.path.join(BASE_DIR, 'users.sqlite')}")
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
@@ -43,8 +43,7 @@ def add_user():
 
     session = Session()
     try:
-        user = User(id=int(request.form['id']),
-                    name=request.form['name'],
+        user = User(name=request.form['name'],
                     password=generate_password_hash(request.form['password']),
                     role=request.form['role'])
         session.add(user)
@@ -72,8 +71,7 @@ def bulk_add():
 
     try:
         for row in reader:
-            session.add(User(id=int(row['id']),
-                               name=row['name'],
+            session.add(User(name=row['name'],
                                password=generate_password_hash(row['password']),
                                role=row['role']))
             added += 1

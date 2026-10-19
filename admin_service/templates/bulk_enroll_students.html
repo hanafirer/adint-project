@@ -3,7 +3,16 @@
 <h1>Bulk enroll students to an exam</h1>
 {% if message %}<p>{{ message }}</p>{% endif %}
 <form action="/enroll" method="post" enctype="multipart/form-data">
-    CSV file: <input type="file" name="file" accept=".csv" required>
+    <label for="exam_id">Select exam:</label>
+    <select name="exam_id" id="exam_id" required>
+        {% for exam in exams %}
+        <option value="{{ exam.id }}">{{ exam.course }} - {{ exam.date }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="file">Upload CSV:</label>
+    <input type="file" name="file" id="file" accept=".csv" required>
+
     <input type="submit">
 </form>
 {% endblock %}

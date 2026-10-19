@@ -1,9 +1,12 @@
-import csv, io
+import csv, io, os
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+
+from xmlrpc import client
+PRINTING_URL = "http://localhost:5003/api"
 
 Base = declarative_base()
 
@@ -23,8 +26,8 @@ class Enrollment(Base):
     student_id = Column(Integer, primary_key=True)
     exam = relationship("Exam", back_populates="enrollments")
 
-
-engine = create_engine('sqlite:///admin.sqlite')  # one database file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+engine = create_engine(f"sqlite:///{os.path.join(BASE_DIR, 'admin.sqlite')}")
 Base.metadata.create_all(engine)
 Session = sessionmaker(bind=engine)
 
@@ -49,8 +52,7 @@ def add_exam():
 
     session = Session()
     try:
-        exam = Exam(id=int(request.form['id']),
-                    date=datetime.strptime(request.form['date'], "%Y-%m-%dT%H:%M"),
+        exam = Exam(date=datetime.strptime(request.form['date'], "%Y-%m-%dT%H:%M"),
                     course=request.form['course'])
         session.add(exam)
         session.commit()
@@ -77,7 +79,7 @@ def bulk_add():
 
         try:
             for row in reader:
-                session.add(Exam(exam_id=exam_id,
+                session.add(Enrollment(exam_id=exam_id,
                                     student_id=int(row['student_id'])))
                 added += 1
             session.commit()
@@ -86,7 +88,7 @@ def bulk_add():
         except Exception as e:
             session.rollback()
             message = f"Error, nothing was added: {e}"
-            return render_template("bulk_enroll_students.html", message=message)
+        return render_template("bulk_enroll_students.html", exams=exams, message=message)
     finally:
         session.close()
 
@@ -110,6 +112,40 @@ def list_enrollments():
     session.close()
     return render_template("enrollments.html", rows=rows, exams=exams,
                            student_id=student_id, exam_id=exam_id)
+
+# printing job
+@app.route("/print", methods=["GET", "POST"])
+def order_printing():
+    session = Session()
+    try:
+        exams = session.query(Exam).order_by(Exam.date).all()
+        if request.method == "GET":
+            return render_template("order_printing.html", exams=exams, message=None)
+
+        exam_id = int(request.form["exam_id"])
+        exam = session.query(Exam).filter_by(id=exam_id).first()
+        if exam is None:
+            message = "Exam not found."
+        else:
+            # koliko študentov je vpisanih na ta izpit
+            n_students = session.query(Enrollment).filter_by(exam_id=exam_id).count()
+            if n_students == 0:
+                message = "No students enrolled in this exam."
+            else:
+                try:
+                    proxy = client.ServerProxy(PRINTING_URL)
+                    result = proxy.print_sheets(exam.id, exam.course, exam.date.strftime("%Y-%m-%d %H:%M"), n_students)
+
+                    if result["ok"]:
+                        message = (f"Printed {result['n_sheets']} sheets " f"({result['n_pages']} pages).")
+                    else:
+                        message = f"Printing refused: {result['error']}"
+
+                except Exception as e:
+                    message = f"Printing service is not available: {e}"                         
+        return render_template("order_printing.html", exams=exams, message=message)
+    finally:
+        session.close()
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5002, debug=True)

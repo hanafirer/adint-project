@@ -3,8 +3,7 @@
 <h1>Add exam</h1>
 {% if error %}<p style="color: red;">{{ error }}</p>{% endif %}
 <form action="/exams/add" method="post">
-    ID: <input type="number" name="id" required><br>
-    DateTime: <input type="datetime" name="date" required><br>
+    DateTime: <input type="datetime-local" name="date" required><br>
     Course: <input type="text" name="course" required><br>
     <input type="submit">
 </form>
